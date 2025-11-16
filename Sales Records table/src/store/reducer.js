@@ -6,6 +6,7 @@ export const initialState = {
   globalFilter: '',
   columnFilters: {},
   pagination: { pageIndex: 0, pageSize: 25 },
+  selectedIds: {},
 };
 
 export function tableReducer(state = initialState, action) {
@@ -23,6 +24,34 @@ export function tableReducer(state = initialState, action) {
       };
     case types.SET_PAGINATION:
       return { ...state, pagination: action.payload };
+    case types.TOGGLE_ROW_SELECTION: {
+      const id = action.payload;
+      const selectedIds = { ...state.selectedIds };
+      if (selectedIds[id]) delete selectedIds[id];
+      else selectedIds[id] = true;
+      return { ...state, selectedIds };
+    }
+    case types.SET_SELECTED_IDS:
+      return { ...state, selectedIds: action.payload };
+    case types.CLEAR_SELECTION:
+      return { ...state, selectedIds: {} };
+    case types.SELECT_ALL_ON_PAGE: {
+      const ids = action.payload || [];
+      const selectedIds = { ...state.selectedIds };
+      ids.forEach((id) => { selectedIds[id] = true; });
+      return { ...state, selectedIds };
+    }
+    case types.DESELECT_ALL_ON_PAGE: {
+      const ids = action.payload || [];
+      const selectedIds = { ...state.selectedIds };
+      ids.forEach((id) => { if (selectedIds[id]) delete selectedIds[id]; });
+      return { ...state, selectedIds };
+    }
+    case types.DELETE_SELECTED: {
+      const selected = state.selectedIds || {};
+      const newData = (state.data || []).filter((row) => !selected[row.id]);
+      return { ...state, data: newData, selectedIds: {} };
+    }
     default:
       return state;
   }

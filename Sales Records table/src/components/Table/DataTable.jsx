@@ -8,15 +8,19 @@ import GlobalSearch from '../Filters/GlobalSearch';
 import FilterControls from '../Filters/FilterControls';
 import ExportButton from '../UI/ExportButton';
 import LoadingSpinner from '../UI/LoadingSpinner';
+import { exportToCsv } from '../../utils/csvExport';
+import * as actions from '../../store/actions';
 
 const DataTable = () => {
   const { data: allData, loading, error } = useTableData();
-  const { state } = useTableState();
+  const { state, dispatch } = useTableState();
+  const [selectionMode, setSelectionMode] = React.useState(false);
 
   // Apply filters and sorting - keep useMemo call unconditionally so hooks order remains stable
   const filteredData = useMemo(() => {
     if (loading || error) return [];
-    let filtered = allData;
+    let source = (state.data && state.data.length) ? state.data : allData;
+    let filtered = source;
 
     // Global search
     if (state.globalFilter) {
@@ -50,7 +54,29 @@ const DataTable = () => {
     }
 
     return filtered;
-  }, [allData, state.globalFilter, state.columnFilters, state.sorting, loading, error]);
+  }, [allData, state.data, state.globalFilter, state.columnFilters, state.sorting, loading, error]);
+
+  // After CSV load, initialize store data if not already set
+  React.useEffect(() => {
+    if (!loading && !error && allData && allData.length > 0 && (!state.data || state.data.length === 0)) {
+      dispatch(actions.setData(allData));
+    }
+  }, [loading, error, allData]);
+  // Pagination
+  const pageCount = Math.ceil(filteredData.length / state.pagination.pageSize);
+  const paginatedData = filteredData.slice(
+    state.pagination.pageIndex * state.pagination.pageSize,
+    (state.pagination.pageIndex + 1) * state.pagination.pageSize
+  );
+
+  // If deletion caused current page to go out of range, clamp it
+  React.useEffect(() => {
+    if (pageCount === 0) return;
+    if (state.pagination.pageIndex >= pageCount) {
+      const newIndex = Math.max(0, pageCount - 1);
+      dispatch(actions.setPagination({ ...state.pagination, pageIndex: newIndex }));
+    }
+  }, [pageCount, state.pagination.pageIndex, state.pagination.pageSize]);
 
   if (loading) return <LoadingSpinner />;
   if (error) return (
@@ -63,13 +89,6 @@ const DataTable = () => {
         </div>
       </div>
     </div>
-  );
-
-  // Pagination
-  const pageCount = Math.ceil(filteredData.length / state.pagination.pageSize);
-  const paginatedData = filteredData.slice(
-    state.pagination.pageIndex * state.pagination.pageSize,
-    (state.pagination.pageIndex + 1) * state.pagination.pageSize
   );
 
   const columns = [
@@ -95,17 +114,81 @@ const DataTable = () => {
           <div className="flex-1 sm:flex-none">
             <FilterControls columns={columns} />
           </div>
-          <div className="flex-1 sm:flex-none">
-            <ExportButton data={filteredData} />
-          </div>
+            <div className="flex-1 sm:flex-none flex gap-2">
+              <ExportButton data={filteredData} />
+              <button
+                onClick={() => {
+                  // If selection UI is not open, open it first
+                  if (!selectionMode) {
+                    setSelectionMode(true);
+                    return;
+                  }
+
+                  // If already open, perform export of selected rows
+                  const selectedIds = Object.keys(state.selectedIds || {}).map(id => Number(id));
+                  const rows = (state.data || []).filter(r => selectedIds.includes(r.id));
+                  if (rows.length === 0) return;
+                  exportToCsv('selected-sales.csv', rows);
+                  // hide selection UI and clear selection after export
+                  dispatch(actions.clearSelection());
+                  setSelectionMode(false);
+                }}
+                disabled={selectionMode ? Object.keys(state.selectedIds || {}).length === 0 : false}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:shadow transition-colors disabled:opacity-50"
+              >
+                {selectionMode ? 'Export Selected' : 'Export'}
+              </button>
+              <button
+                onClick={() => {
+                  // If selection UI not open, open it first
+                  if (!selectionMode) {
+                    setSelectionMode(true);
+                    return;
+                  }
+                  // If open, perform delete
+                  const selectedCount = Object.keys(state.selectedIds || {}).length;
+                  if (selectedCount === 0) return;
+                  dispatch(actions.deleteSelected());
+                  setSelectionMode(false);
+                }}
+                disabled={selectionMode ? Object.keys(state.selectedIds || {}).length === 0 : false}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white font-semibold rounded-xl hover:shadow transition-colors disabled:opacity-50"
+              >
+                {selectionMode ? 'Delete Selected' : 'Delete'}
+              </button>
+                {selectionMode && (
+                  <button
+                    onClick={() => {
+                      dispatch(actions.clearSelection());
+                      setSelectionMode(false);
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-xl hover:shadow transition-colors"
+                  >
+                    Cancel
+                  </button>
+                )}
+            </div>
         </div>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
         <table className="min-w-full divide-y divide-gray-200">
-          <TableHeader columns={columns} />
-          <TableBody data={paginatedData} columns={columns} />
+          <TableHeader
+            columns={columns}
+            pageRowIds={paginatedData.map(r => r.id)}
+            selectedIds={state.selectedIds}
+            dispatch={dispatch}
+            sorting={state.sorting}
+            showCheckboxes={selectionMode}
+          />
+          <TableBody
+            data={paginatedData}
+            columns={columns}
+            selectedIds={state.selectedIds}
+            dispatch={dispatch}
+            showCheckboxes={selectionMode}
+          />
         </table>
       </div>
 
