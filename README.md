@@ -1,37 +1,127 @@
 # Sales Records Dashboard
 
-A responsive, high-performance dashboard for exploring large CSV sales data (100k+ rows). Built with React + Vite and Tailwind CSS. Includes client-side CSV parsing (PapaParse), fast table rendering, filters, sorting, pagination and CSV export.
+A responsive and high-performance dashboard for viewing and managing large CSV datasets (100,000+ rows) using **React, Vite, Tailwind CSS, and PapaParse**.
 
 ---
 
-## Features
+## 🔗 Live Demo
 
-- Parses CSV data with PapaParse
-- Global search + per-column filters
-- Client-side sorting and pagination
-- CSV export
-- Clean, modern UI (Tailwind + custom styles)
-- Local provider using `useReducer` + Redux-style actions/reducer
+👉 **Deployed App:** https://nirmaan-company.vercel.app/
 
 ---
 
-## Quick start
+## 🚀 Features
 
-Requirements:
-- Node.js 18+ (or your local project's required version)
-- npm (or yarn)
+- Upload & parse CSV files (PapaParse)
+- Global search + column filters
+- Sorting on all columns
+- Pagination for large datasets
+- Select single/multiple rows
+- Bulk delete & bulk export
+- Show / hide table columns
+- Clean and responsive UI (Tailwind CSS)
 
-Install deps:
+---
 
-Run dev server:
+## 📦 Installation
+
+Ensure **Node.js 18+** is installed.
+
+```bash
+npm install
+```
+
+---
+
+## ▶️ Run the Project
 
 ```bash
 npm run dev
 ```
 
-## Styling & Theming
-
-- The UI uses Tailwind CSS and custom utility classes in `App.css` and `index.css`.
-- To change primary colors, edit the Tailwind config or update gradient classes used across components.
+Open the development URL shown in your terminal  
+(usually `http://localhost:5173`)
 
 ---
+
+## 🏗️ Build for Production
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+ ├── components/
+ │    └── Table/
+ │         ├── DataTable.jsx
+ │         ├── TableHeader.jsx
+ │         ├── TableBody.jsx
+ │
+ ├── hooks/
+ │    └── useTableData.js
+ │
+ ├── store/
+ │    ├── tableActions.js
+ │    ├── tableReducer.js
+ │    └── index.js
+ │
+ └── data/
+      └── 100000_Sales_Records.csv
+```
+
+---
+
+## 🔧 Tech Stack
+
+- **React + Vite** — fast development environment  
+- **Tailwind CSS** — utility-based styling  
+- **PapaParse** — CSV parsing  
+- **useReducer** — state management  
+
+---
+
+## 📊 Dataset
+
+Includes a real dataset:
+
+```
+100,000_Sales_Records.csv
+```
+
+Used for performance and stress testing of filters, sorting, and pagination.
+
+---
+
+## ⚠️ Known Limitations
+
+- CSV parsing is done in the browser (may freeze with extremely large files)
+- Delete operation has no confirmation dialog yet
+- "Select all pages" feature is not implemented
+
+---
+
+## 💡 Future Enhancements
+
+- Confirmation popup for delete  
+- Toast notifications  
+- Virtualized table for extremely large datasets  
+- Dark mode support  
+
+---
+
+## 🕒 Development Time
+
+Approx. **26 hours** to build core logic:  
+parsing, table rendering, filters, sorting, pagination, selection, export, and delete.
+
+---
+
+## 📄 License
+
+This project is open for personal and educational use.
